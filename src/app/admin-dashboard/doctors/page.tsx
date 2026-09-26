@@ -71,7 +71,7 @@ export default function AdminDoctorsPage() {
 
     const fetchDoctors = useCallback(async () => {
         try {
-            const res = await fetch(`https://backend-hvbb.onrender.com/api/doctors`, {
+            const res = await fetch(`http://localhost:5000/api/doctors`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -87,7 +87,7 @@ export default function AdminDoctorsPage() {
         setSlotLoading(true);
         setSlotData(null);
         try {
-            const res = await fetch(`https://backend-hvbb.onrender.com/api/doctors/${doctorId}/slots?date=${date}`, {
+            const res = await fetch(`http://localhost:5000/api/doctors/${doctorId}/slots?date=${date}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -142,8 +142,8 @@ export default function AdminDoctorsPage() {
                 avatarUrl: form.avatarUrl || null, status: form.status
             };
             const url = showModal === 'add'
-                ? `https://backend-hvbb.onrender.com/api/doctors`
-                : `https://backend-hvbb.onrender.com/api/doctors/${selectedDoctor!.id}`;
+                ? `http://localhost:5000/api/doctors`
+                : `http://localhost:5000/api/doctors/${selectedDoctor!.id}`;
             const method = showModal === 'add' ? 'POST' : 'PUT';
 
             const res = await fetch(url, {
@@ -163,7 +163,7 @@ export default function AdminDoctorsPage() {
         if (!selectedDoctor) return;
         setSaving(true);
         try {
-            const res = await fetch(`https://backend-hvbb.onrender.com/api/doctors/${selectedDoctor.id}`, {
+            const res = await fetch(`http://localhost:5000/api/doctors/${selectedDoctor.id}`, {
                 method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();

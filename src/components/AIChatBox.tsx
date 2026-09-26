@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import API from '@/lib/api';
 import { toast } from 'sonner';
-import { Send, Sparkles, User, CalendarDays, CreditCard, Bot, Stethoscope, ChevronRight, Paperclip } from 'lucide-react';
+import { Send, Sparkles, User, CalendarDays, CreditCard, Bot, Stethoscope, ChevronRight, Paperclip, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -22,6 +22,7 @@ export default function AIChatBox({ className }: { className?: string }) {
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [skippedLocations, setSkippedLocations] = useState<number[]>([]);
 
     // States for booking sub-interfaces in chat
     const [slotsData, setSlotsData] = useState<any[]>([]);
@@ -49,13 +50,15 @@ export default function AIChatBox({ className }: { className?: string }) {
         }
     };
 
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSendMessage = async (e?: React.FormEvent, locationData?: { latitude: number, longitude: number }) => {
+        if (e) e.preventDefault();
 
-        if (!input.trim()) return;
+        const userMsg = input.trim() || (locationData ? "Here is my location." : "");
+        if (!userMsg && !locationData) return;
 
-        const userMsg = input.trim();
-        setInput('');
+        if (input.trim()) {
+            setInput('');
+        }
         
         // Handle Cancel command
         if (userMsg.toLowerCase() === 'cancel') {
@@ -64,16 +67,32 @@ export default function AIChatBox({ className }: { className?: string }) {
             return;
         }
 
-        addChatMessage({
-            sender: 'user',
-            text: userMsg,
-            timestamp: new Date()
-        });
+        if (!locationData) {
+            addChatMessage({
+                sender: 'user',
+                text: userMsg,
+                timestamp: new Date()
+            });
+        } else {
+            addChatMessage({
+                sender: 'user',
+                text: "📍 Shared Location",
+                timestamp: new Date()
+            });
+        }
 
         setIsTyping(true);
         try {
-            // Call AI Symptom Chat endpoint
-            const res = await API.post('/ai/chat', { message: userMsg });
+            // Include location data if available. For location sharing, we send the last symptoms.
+            const messageToSend = locationData && booking.symptoms ? booking.symptoms : userMsg;
+            
+            const payload: any = { message: messageToSend };
+            if (locationData) {
+                payload.latitude = locationData.latitude;
+                payload.longitude = locationData.longitude;
+            }
+
+            const res = await API.post('/ai/chat', payload);
             console.log('🟢 AI API response:', res.data);
             const aiData = res.data.data;
 
@@ -85,13 +104,14 @@ export default function AIChatBox({ className }: { className?: string }) {
                 actionHint: aiData.actionHint,
                 // Preserve any additional structured data for UI components
                 data: aiData,
+                requestLocation: aiData.requestLocation
             };
             addChatMessage(newAiMessage);
 
             // Update booking details if additional data is provided
             if (aiData.specialization || aiData.urgency || aiData.recommendedDoctors) {
                 updateBooking({
-                    symptoms: userMsg,
+                    symptoms: messageToSend,
                     ...(aiData.urgency && { urgency: aiData.urgency }),
                     ...(aiData.specialization && { specialization: aiData.specialization }),
                     ...(aiData.recommendedDoctors && { recommendedDoctors: aiData.recommendedDoctors })
@@ -103,6 +123,25 @@ export default function AIChatBox({ className }: { className?: string }) {
         } finally {
             setIsTyping(false);
         }
+    };
+
+    const handleShareLocation = () => {
+        if (!navigator.geolocation) {
+            toast.error("Geolocation is not supported by your browser");
+            return;
+        }
+
+        toast.info("Requesting location access...");
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                handleSendMessage(undefined, { latitude, longitude });
+            },
+            (error) => {
+                console.error("Location error:", error);
+                toast.error("Failed to get location. Please allow location permissions.");
+            }
+        );
     };
 
     // Doctor Selection
@@ -195,7 +234,7 @@ export default function AIChatBox({ className }: { className?: string }) {
 
         setIsTyping(true);
         try {
-            // Create pending appointment
+            // Create pending appointment — include form details so backend updates patient profile
             const res = await API.post('/appointments', {
                 doctorId: booking.selectedDoctor.id,
                 appointmentDate: booking.selectedDate,
@@ -203,7 +242,13 @@ export default function AIChatBox({ className }: { className?: string }) {
                 symptoms: booking.symptoms,
                 urgencyLevel: booking.urgency,
                 aiSummary: `AI diagnosed specialization: ${booking.specialization}. Symptoms: ${booking.symptoms}. Contact: ${patientForm.phone}.`,
-                amount: booking.selectedDoctor.fee
+                amount: booking.selectedDoctor.fee,
+                // Patient details from the form — backend will update the patient profile
+                patientName: patientForm.name,
+                patientAge: patientForm.age,
+                patientGender: patientForm.gender,
+                patientPhone: patientForm.phone,
+                patientEmail: patientForm.email,
             });
 
             const appDetails = res.data.data;
@@ -362,7 +407,7 @@ export default function AIChatBox({ className }: { className?: string }) {
                     </div>
                     <div>
                         <h2 className="font-bold text-[15px] text-slate-800 dark:text-slate-100 leading-none flex items-center gap-2">
-                            Swasthya AI 
+                            Swasth Setu AI 
                             <span className="relative flex h-2.5 w-2.5 ml-1">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
@@ -403,31 +448,103 @@ export default function AIChatBox({ className }: { className?: string }) {
 
                             {/* Render Inline Interfaces depending on the Action Hint */}
                             {msg.sender === 'ai' && msg.actionHint === 'select_doctor' && msg.data?.recommendedDoctors && (
-                                <div className="ml-11 mr-4 mt-2 flex overflow-x-auto gap-4 pb-4 snap-x max-w-full hide-scrollbar animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                    {msg.data.recommendedDoctors.map((doc: any) => (
-                                        <div key={doc.id} className="min-w-[260px] shrink-0 snap-start p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col gap-4 group hover:border-teal-500/30 hover:shadow-teal-500/5 transition-all">
-                                            <div className="flex gap-4">
-                                                <ProfileAvatar name={doc.name} size="lg" className="h-12 w-12 rounded-2xl shadow-sm" />
-                                                <div className="min-w-0 flex-1">
-                                                    <h4 className="font-bold text-slate-800 dark:text-slate-100 text-[15px] truncate leading-tight">Dr. {doc.name}</h4>
-                                                    <p className="text-[12px] text-teal-600 dark:text-teal-400 font-semibold truncate mt-0.5">{doc.specialization}</p>
-                                                    <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1"><Sparkles className="h-3 w-3 text-amber-400" /> {doc.experience} Years Exp</p>
+                                <div className="ml-11 mr-4 mt-2 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-500 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden max-w-full flex flex-col">
+                                    {(msg.requestLocation && !skippedLocations.includes(index)) ? (
+                                        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 border-b border-blue-100 dark:border-blue-800/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-800/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                                    <MapPin className="h-5 w-5" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-semibold text-blue-900 dark:text-blue-100 text-[14px]">Find nearest doctors?</h4>
+                                                    <p className="text-[12px] text-blue-600/80 dark:text-blue-300">Share your location to sort by distance.</p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-100 dark:border-slate-800/50">
-                                                <div className="flex items-center gap-1.5 text-[13px] font-black text-slate-700 dark:text-slate-300">
-                                                    ₹{doc.fee}
-                                                </div>
+                                            <div className="flex items-center gap-2 w-full sm:w-auto">
                                                 <Button 
-                                                    size="sm" 
-                                                    onClick={() => handleSelectDoctor(doc)}
-                                                    className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white rounded-xl h-9 text-xs px-5 font-semibold shadow-sm"
+                                                    variant="outline"
+                                                    onClick={() => setSkippedLocations(prev => [...prev, index])}
+                                                    className="rounded-xl h-9 px-4 text-[13px] font-semibold flex-1 sm:flex-none border-blue-200 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-900"
                                                 >
-                                                    Select
+                                                    Skip
+                                                </Button>
+                                                <Button 
+                                                    onClick={handleShareLocation}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-9 px-4 text-[13px] font-semibold shadow-sm flex-1 sm:flex-none"
+                                                >
+                                                    Share Location
                                                 </Button>
                                             </div>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        <div className="overflow-x-auto hide-scrollbar">
+                                        <table className="w-full text-left text-sm whitespace-nowrap">
+                                            <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                                                <tr>
+                                                    <th className="font-semibold py-3 px-4">Doctor</th>
+                                                    <th className="font-semibold py-3 px-4">Specialization</th>
+                                                    <th className="font-semibold py-3 px-4">Hospital</th>
+                                                    <th className="font-semibold py-3 px-4">Fees</th>
+                                                    <th className="font-semibold py-3 px-4"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                                {msg.data.recommendedDoctors.map((doc: any) => (
+                                                    <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                                                        <td className="py-3 px-4 min-w-[200px]">
+                                                            <div className="flex items-center gap-3">
+                                                                <ProfileAvatar name={doc.name} size="sm" className="h-10 w-10 rounded-xl shadow-sm shrink-0 border border-slate-100 dark:border-slate-800" />
+                                                                <div>
+                                                                    <div className="font-bold text-slate-800 dark:text-slate-100 text-[14px]">Dr. {doc.name}</div>
+                                                                    <div className="text-[12px] text-slate-500 flex items-center gap-1 mt-0.5">
+                                                                        <Sparkles className="h-3 w-3 text-amber-500" /> {doc.experience} Years Exp
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 px-4 text-teal-600 dark:text-teal-400 font-medium text-[13px]">{doc.specialization}</td>
+                                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 text-[13px]">
+                                                            {doc.hospital_name ? (
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-medium truncate max-w-[150px]">{doc.hospital_name}</span>
+                                                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                                                        {doc.hospital_category && <span className="text-[11px] text-slate-400 capitalize bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{doc.hospital_category}</span>}
+                                                                        {doc.distance !== undefined && <span className="text-[11px] text-blue-500 font-medium">{doc.distance.toFixed(1)} km away</span>}
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-slate-400 italic">Independent</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="py-3 px-4 font-black text-slate-700 dark:text-slate-300">₹{doc.fee}</td>
+                                                        <td className="py-3 px-4 text-right">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                {doc.hospital_google_maps_link && (
+                                                                    <Button
+                                                                        size="icon"
+                                                                        variant="outline"
+                                                                        className="h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                                                                        onClick={() => window.open(doc.hospital_google_maps_link, '_blank')}
+                                                                        title="View on Google Maps"
+                                                                    >
+                                                                        <MapPin className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    onClick={() => handleSelectDoctor(doc)}
+                                                                    className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white rounded-xl h-9 px-5 text-[13px] font-semibold shadow-sm transition-all group-hover:shadow-md"
+                                                                >
+                                                                    Book Now
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    )}
                                 </div>
                             )}
 
@@ -517,11 +634,11 @@ export default function AIChatBox({ className }: { className?: string }) {
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
                                                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Age</label>
-                                                <Input name="age" placeholder="e.g. 28" className="h-11 text-[13px] font-medium rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:ring-teal-500/20" />
+                                                <Input name="age" defaultValue={user?.age?.toString() || ''} placeholder="e.g. 28" className="h-11 text-[13px] font-medium rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:ring-teal-500/20" />
                                             </div>
                                             <div>
                                                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Gender</label>
-                                                <Input name="gender" placeholder="e.g. Male" className="h-11 text-[13px] font-medium rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:ring-teal-500/20" />
+                                                <Input name="gender" defaultValue={user?.gender || ''} placeholder="e.g. Male" className="h-11 text-[13px] font-medium rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:ring-teal-500/20" />
                                             </div>
                                         </div>
                                         <div>

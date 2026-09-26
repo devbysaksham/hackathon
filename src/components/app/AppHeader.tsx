@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
+import API from '@/lib/api';
 import { Bell, User as UserIcon, Search, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from '@/components/ui/button';
@@ -18,9 +19,20 @@ import {
 import { cn } from '@/lib/utils';
 
 export default function AppHeader() {
-    const { user, logout } = useAppStore();
+    const { user, logout, setUser } = useAppStore();
     const router = useRouter();
     const pathname = usePathname();
+
+    // Fetch full profile on mount so age/phone/gender are always populated
+    useEffect(() => {
+        if (user?.id && user.role === 'patient' && !user.phone) {
+            API.get(`/auth/me`).then(res => {
+                if (res.data?.data) {
+                    setUser({ ...user, ...res.data.data });
+                }
+            }).catch(() => {});
+        }
+    }, [user?.id]);
 
     const handleLogout = () => {
         logout();

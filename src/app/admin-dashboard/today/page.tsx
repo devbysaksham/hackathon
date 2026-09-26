@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import API from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { QrCode, Search, CheckCircle2, Clock, User, AlertCircle } from 'lucide-react';
+import { QrCode, Search, CheckCircle2, Clock, User, AlertCircle, FileText } from 'lucide-react';
 
 export default function TodayQueuePage() {
     const [appointments, setAppointments] = useState([]);
@@ -12,6 +12,10 @@ export default function TodayQueuePage() {
     const [verifyCode, setVerifyCode] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [tempRecords, setTempRecords] = useState<Record<string, string[]>>({});
+    const [scanModal, setScanModal] = useState<{isOpen: boolean, patientId: string | null, progress: number, isScanning: boolean, currentPages: string[]}>({
+        isOpen: false, patientId: null, progress: 0, isScanning: false, currentPages: []
+    });
 
     const fetchTodayQueue = async () => {
         try {
@@ -56,6 +60,96 @@ export default function TodayQueuePage() {
             toast.error(error.response?.data?.message || "Failed to generate queue");
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleUploadRecordClick = (patientId: string) => {
+        setScanModal({ isOpen: true, patientId, progress: 0, isScanning: false, currentPages: tempRecords[patientId] || [] });
+    };
+
+    const handleStartScan = () => {
+        // Since direct hardware scanner access isn't possible via standard web APIs without a local client,
+        // we trigger a file upload. Receptionists can scan from the printer to their PC, then select the files here.
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*,application/pdf';
+        fileInput.multiple = true;
+        
+        fileInput.onchange = async (e: any) => {
+            const files = Array.from(e.target.files) as File[];
+            if (files.length === 0) return;
+
+            setScanModal(prev => ({ ...prev, isScanning: true, progress: 0 }));
+
+            const newPages: string[] = [];
+            let processed = 0;
+
+            for (const file of files) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    if (event.target?.result) {
+                        newPages.push(event.target.result as string);
+                    }
+                    processed++;
+                    setScanModal(prev => ({ ...prev, progress: Math.round((processed / files.length) * 100) }));
+                    
+                    if (processed === files.length) {
+                        setScanModal(prev => ({ 
+                            ...prev, 
+                            progress: 100, 
+                            isScanning: false, 
+                            currentPages: [...prev.currentPages, ...newPages]
+                        }));
+                        toast.success(`${files.length} document(s) uploaded successfully!`);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        
+        fileInput.click();
+    };
+
+    const handleSaveModal = () => {
+        if (scanModal.patientId) {
+            setTempRecords(prev => ({ ...prev, [scanModal.patientId!]: scanModal.currentPages }));
+        }
+        setScanModal({ isOpen: false, patientId: null, progress: 0, isScanning: false, currentPages: [] });
+    };
+
+    const handleDeletePage = (index: number) => {
+        setScanModal(prev => ({
+            ...prev,
+            currentPages: prev.currentPages.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleFinalSave = async (appointmentId: string, patientId: string) => {
+        try {
+            const pages = tempRecords[patientId] || [];
+            if (pages.length > 0) {
+                await API.post('/medical-records', {
+                    patientId: patientId,
+                    visitSummary: `General Record - Scanned Physical Document (${pages.length} page(s))`,
+                    reportFile: JSON.stringify(pages)
+                });
+            }
+            
+            // Use correct field name: 'appointmentStatus' (not 'status')
+            await API.put(`/appointments/${appointmentId}/status`, { appointmentStatus: 'completed' });
+
+            // Clear temp records for this patient
+            setTempRecords(prev => {
+                const next = { ...prev };
+                delete next[patientId];
+                return next;
+            });
+
+            toast.success("Visit finalized and records saved successfully!");
+            fetchTodayQueue();
+        } catch (error: any) {
+            console.error('Final save error:', error.response?.data || error.message);
+            toast.error(error.response?.data?.message || "Failed to finalize visit.");
         }
     };
 
@@ -115,6 +209,7 @@ export default function TodayQueuePage() {
                                     <th className="px-5 py-3 font-semibold text-slate-600">Doctor</th>
                                     <th className="px-5 py-3 font-semibold text-slate-600">Slot</th>
                                     <th className="px-5 py-3 font-semibold text-slate-600">Status</th>
+                                    <th className="px-5 py-3 font-semibold text-slate-600 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
@@ -152,8 +247,39 @@ export default function TodayQueuePage() {
                                                 }`}>
                                                     {app.appointment_status === 'confirmed' 
                                                         ? 'Awaiting Check-in' 
-                                                        : app.appointment_status.replace('_', ' ')}
+                                                        : app.appointment_status === 'completed' 
+                                                            ? 'Finalized' 
+                                                            : app.appointment_status.replace('_', ' ')}
                                                 </span>
+                                            </td>
+                                            <td className="px-5 py-3 text-right">
+                                                {app.appointment_status === 'checked_in' && (
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="outline" 
+                                                            className="text-xs h-8 bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100"
+                                                            onClick={() => window.location.href = `/admin-dashboard/medicines?patientId=${app.patient_id}`}
+                                                        >
+                                                            Allot Medicines
+                                                        </Button>
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="outline" 
+                                                            className="text-xs h-8 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                                                            onClick={() => handleUploadRecordClick(app.patient_id)}
+                                                        >
+                                                            Upload Record
+                                                        </Button>
+                                                        <Button 
+                                                            size="sm" 
+                                                            className="text-xs h-8 bg-green-600 text-white hover:bg-green-700"
+                                                            onClick={() => handleFinalSave(app.id, app.patient_id)}
+                                                        >
+                                                            Close & Final Save
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
@@ -183,6 +309,89 @@ export default function TodayQueuePage() {
                     </ul>
                 </div>
             </div>
+
+            {/* Scan Modal */}
+            {scanModal.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl flex flex-col items-center text-center">
+                        <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                            <QrCode className="h-8 w-8 text-blue-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">Upload Physical Record</h3>
+                        <p className="text-sm text-slate-500 mb-4">
+                            Scan the document using your printer/scanner and select the file(s) below.
+                        </p>
+
+                        <div className="w-full mb-6">
+                            {scanModal.currentPages.length > 0 && (
+                                <div className="flex flex-wrap gap-3 p-4 bg-slate-50 rounded-xl max-h-48 overflow-y-auto mb-4 border border-slate-200">
+                                    {scanModal.currentPages.map((page, idx) => {
+                                        const isPdf = page.startsWith('data:application/pdf') || page.endsWith('.pdf');
+                                        return (
+                                            <div key={idx} className="relative w-20 h-24 border border-slate-300 rounded shadow-sm group bg-white flex flex-col items-center justify-center">
+                                                {isPdf ? (
+                                                    <div className="flex flex-col items-center justify-center text-slate-400 h-full">
+                                                        <FileText className="h-8 w-8 mb-1" />
+                                                        <span className="text-[8px] font-bold">PDF</span>
+                                                    </div>
+                                                ) : (
+                                                    <img src={page} className="w-full h-full object-cover rounded opacity-80" alt={`Scanned page ${idx + 1}`} />
+                                                )}
+                                                <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1 rounded">{idx + 1}</span>
+                                                <button 
+                                                    onClick={() => handleDeletePage(idx)} 
+                                                    className="absolute -top-2 -right-2 bg-red-500 rounded-full text-white w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    x
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {scanModal.isScanning ? (
+                                <div className="w-full space-y-2">
+                                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-blue-600 transition-all duration-200"
+                                            style={{ width: `${scanModal.progress}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-xs font-bold text-blue-600">
+                                        Scanning... {scanModal.progress}%
+                                    </p>
+                                </div>
+                            ) : (
+                                <Button 
+                                    onClick={handleStartScan}
+                                    variant="outline"
+                                    className="w-full border-blue-200 text-blue-700 hover:bg-blue-50 h-12 border-dashed border-2"
+                                >
+                                    <AlertCircle className="h-4 w-4 mr-2 text-blue-500" />
+                                    {scanModal.currentPages.length > 0 ? "Upload More Documents" : "Upload Scanned Documents"}
+                                </Button>
+                            )}
+                        </div>
+
+                        <div className="flex gap-3 w-full">
+                            <Button 
+                                variant="ghost" 
+                                className="flex-1"
+                                onClick={() => setScanModal({ isOpen: false, patientId: null, progress: 0, isScanning: false, currentPages: [] })}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                onClick={handleSaveModal}
+                            >
+                                Save Documents
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

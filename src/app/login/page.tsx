@@ -24,6 +24,7 @@ type LoginFormValues = zod.infer<typeof loginSchema>;
 const DEMO_CREDENTIALS = {
     patient: { email: 'patient@swasthsetu.health', password: 'patient123' },
     admin: { email: 'admin@swasthsetu.health', password: 'admin123' },
+    org: { email: 'org@swasthstu.com', password: 'orgadmin123' },
 } as const;
 
 export default function LoginPage() {
@@ -31,7 +32,7 @@ export default function LoginPage() {
     const { setUser, setToken } = useAppStore();
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [activeRole, setActiveRole] = useState<'patient' | 'admin'>('patient');
+    const [activeRole, setActiveRole] = useState<'patient' | 'admin' | 'org'>('patient');
 
     const { register, handleSubmit, setValue, formState: { errors } } = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
@@ -53,7 +54,9 @@ export default function LoginPage() {
             toast.success(`Welcome back, ${user.name}!`);
 
             // Redirect based on role
-            if (user.role === 'admin') {
+            if (user.role === 'org_admin') {
+                router.push('/org-dashboard');
+            } else if (user.role === 'admin') {
                 router.push('/admin-dashboard');
             } else {
                 router.push('/app/home');
@@ -68,11 +71,11 @@ export default function LoginPage() {
     };
 
     // Fill the form with demo credentials for the selected role
-    const handleRoleSelect = (role: 'patient' | 'admin') => {
+    const handleRoleSelect = (role: 'patient' | 'admin' | 'org') => {
         setActiveRole(role);
         setValue('email', DEMO_CREDENTIALS[role].email, { shouldValidate: true });
         setValue('password', DEMO_CREDENTIALS[role].password, { shouldValidate: true });
-        toast.info(`Demo credentials loaded for ${role === 'admin' ? 'Admin' : 'User'}`);
+        toast.info(`Demo credentials loaded for ${role.toUpperCase()}`);
     };
 
     return (
@@ -104,7 +107,7 @@ export default function LoginPage() {
                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-3">
                             Quick Demo Access
                         </p>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-3">
                             <button
                                 type="button"
                                 onClick={() => handleRoleSelect('patient')}
@@ -133,9 +136,26 @@ export default function LoginPage() {
                                 <div className={`h-10 w-10 rounded-xl flex items-center justify-center mb-3 transition-all ${activeRole === 'admin' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
                                     <ShieldCheck className="h-5 w-5" />
                                 </div>
-                                <span className={`text-sm font-bold block ${activeRole === 'admin' ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>Admin</span>
+                                <span className={`text-sm font-bold block ${activeRole === 'admin' ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>Hospital</span>
                                 <span className="text-[10px] text-slate-400 font-medium mt-0.5 block truncate">
-                                    admin@swasthsetu.health
+                                    admin@...
+                                </span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => handleRoleSelect('org')}
+                                className={`relative p-4 rounded-2xl border-2 text-left transition-all cursor-pointer group ${activeRole === 'org'
+                                    ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 shadow-sm'
+                                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
+                                    }`}
+                            >
+                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center mb-3 transition-all ${activeRole === 'org' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                                    <Activity className="h-5 w-5" />
+                                </div>
+                                <span className={`text-sm font-bold block ${activeRole === 'org' ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>Organization</span>
+                                <span className="text-[10px] text-slate-400 font-medium mt-0.5 block truncate">
+                                    org@...
                                 </span>
                             </button>
                         </div>

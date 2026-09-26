@@ -36,8 +36,8 @@ export default function AdminPatientsPage() {
         setLoading(true);
         try {
             const url = query 
-                ? `https://backend-hvbb.onrender.com/api/admin/patients?search=${encodeURIComponent(query)}`
-                : `https://backend-hvbb.onrender.com/api/admin/patients`;
+                ? `http://localhost:5000/api/admin/patients?search=${encodeURIComponent(query)}`
+                : `http://localhost:5000/api/admin/patients`;
                 
             const res = await fetch(url, {
                 headers: {
@@ -98,7 +98,7 @@ export default function AdminPatientsPage() {
             };
             if (form.password) payload.password = form.password;
 
-            const res = await fetch(`https://backend-hvbb.onrender.com/api/admin/patients/${selectedPatient.id}`, {
+            const res = await fetch(`http://localhost:5000/api/admin/patients/${selectedPatient.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(payload)

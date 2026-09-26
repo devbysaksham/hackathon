@@ -18,7 +18,7 @@ export default function AdminRevenuePage() {
     useEffect(() => {
         const fetchRevenue = async () => {
             try {
-                const res = await fetch(`https://backend-hvbb.onrender.com/api/admin/revenue`, {
+                const res = await fetch(`http://localhost:5000/api/admin/revenue`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

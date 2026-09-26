@@ -16,6 +16,7 @@ export default function AppRecordsPage() {
     const [records, setRecords] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState<'general' | 'admission'>('general');
 
     useEffect(() => {
         if (!token || !user) {
@@ -39,7 +40,9 @@ export default function AppRecordsPage() {
     };
 
     const filteredRecords = records.filter((rec: any) =>
-        !searchTerm || (rec.diagnosis && rec.diagnosis.toLowerCase().includes(searchTerm.toLowerCase()))
+        !searchTerm || 
+        (rec.diagnosis && rec.diagnosis.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (rec.visit_summary && rec.visit_summary.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     if (isLoading) {
@@ -95,41 +98,83 @@ export default function AppRecordsPage() {
                 </CardContent>
             </Card>
 
-            {/* Search bar */}
-            {records.length > 0 && (
-                <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Search by diagnosis..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 shadow-sm transition-all"
-                    />
-                </div>
+            {/* Tabs for Record Types */}
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-4 mt-2">
+                <button 
+                    onClick={() => setActiveTab('general')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                        activeTab === 'general' 
+                        ? 'bg-white text-purple-700 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                    }`}
+                >
+                    General Record
+                </button>
+                <button 
+                    onClick={() => setActiveTab('admission')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                        activeTab === 'admission' 
+                        ? 'bg-white text-purple-700 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                    }`}
+                >
+                    Admission Record
+                </button>
+            </div>
+
+            {activeTab === 'general' && (
+                <>
+                    {/* Search bar */}
+                    {records.length > 0 && (
+                        <div className="relative mb-4">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Search by diagnosis or summary..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 shadow-sm transition-all"
+                            />
+                        </div>
+                    )}
+
+                    {/* Records list */}
+                    {filteredRecords.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-purple-50 to-indigo-50 flex items-center justify-center mb-4 shadow-sm">
+                                <FolderHeart className="h-9 w-9 text-purple-300" />
+                            </div>
+                            <p className="text-sm font-semibold text-slate-600 mb-1">
+                                {searchTerm ? 'No matching records' : 'No medical records yet'}
+                            </p>
+                            <p className="text-xs text-slate-400 max-w-[260px]">
+                                {searchTerm 
+                                    ? 'Try a different search term to find your records.'
+                                    : 'Your medical records will appear here once your doctor saves visit reports or uploads scanned documents.'
+                                }
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                            {filteredRecords.map((rec: any) => (
+                                <MedicalFileCard key={rec.id} record={rec} />
+                            ))}
+                        </div>
+                    )}
+                </>
             )}
 
-            {/* Records list */}
-            {filteredRecords.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-purple-50 to-indigo-50 flex items-center justify-center mb-4 shadow-sm">
-                        <FolderHeart className="h-9 w-9 text-purple-300" />
+            {activeTab === 'admission' && (
+                <div className="flex flex-col items-center justify-center py-16 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                    <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-indigo-50 to-blue-50 flex items-center justify-center mb-4 shadow-sm">
+                        <FileText className="h-9 w-9 text-indigo-300" />
                     </div>
                     <p className="text-sm font-semibold text-slate-600 mb-1">
-                        {searchTerm ? 'No matching records' : 'No medical records yet'}
+                        Admission Records
                     </p>
                     <p className="text-xs text-slate-400 max-w-[260px]">
-                        {searchTerm 
-                            ? 'Try a different search term to find your records.'
-                            : 'Your medical records will appear here once your doctor saves visit reports and diagnoses.'
-                        }
+                        The admission module is currently being built. Any future admission records will appear here.
                     </p>
-                </div>
-            ) : (
-                <div className="grid gap-4">
-                    {filteredRecords.map((rec: any) => (
-                        <MedicalFileCard key={rec.id} record={rec} />
-                    ))}
                 </div>
             )}
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import { Loader2, Pill, Search, Plus, Trash2, X, CheckCircle2, User } from 'lucide-react';
@@ -24,8 +25,9 @@ const emptyMed = (): MedicineEntry => ({
     instructions: '', beforeAfterFood: 'After food'
 });
 
-export default function AdminMedicinesPage() {
+function MedicinesContent() {
     const { token } = useAppStore();
+    const searchParams = useSearchParams();
     const [patients, setPatients] = useState<Patient[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [searching, setSearching] = useState(false);
@@ -38,7 +40,7 @@ export default function AdminMedicinesPage() {
         if (!query.trim()) { setPatients([]); return; }
         setSearching(true);
         try {
-            const res = await fetch(`https://backend-hvbb.onrender.com/api/admin/patients?search=${encodeURIComponent(query)}`, {
+            const res = await fetch(`http://localhost:5000/api/admin/patients?search=${encodeURIComponent(query)}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -51,6 +53,24 @@ export default function AdminMedicinesPage() {
         const timer = setTimeout(() => searchPatients(searchTerm), 400);
         return () => clearTimeout(timer);
     }, [searchTerm, searchPatients]);
+
+    useEffect(() => {
+        const patientId = searchParams.get('patientId');
+        if (patientId && token) {
+            fetch(`http://localhost:5000/api/patients/${patientId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    setSelectedPatient(data.data);
+                    setSearchTerm(data.data.name);
+                    setPatients([data.data]);
+                }
+            })
+            .catch(err => console.error(err));
+        }
+    }, [searchParams, token]);
 
     const addMedicine = () => setMedicines(m => [...m, emptyMed()]);
     const removeMedicine = (i: number) => setMedicines(m => m.filter((_, idx) => idx !== i));
@@ -73,7 +93,7 @@ export default function AdminMedicinesPage() {
 
         setSubmitting(true);
         try {
-            const res = await fetch(`https://backend-hvbb.onrender.com/api/medicines/allot`, {
+            const res = await fetch(`http://localhost:5000/api/medicines/allot`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ patientId: selectedPatient.id, medicines })
@@ -255,5 +275,13 @@ export default function AdminMedicinesPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function AdminMedicinesPage() {
+    return (
+        <Suspense fallback={<div className="p-8">Loading...</div>}>
+            <MedicinesContent />
+        </Suspense>
     );
 }

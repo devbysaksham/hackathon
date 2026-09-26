@@ -30,7 +30,7 @@ export default function AdminAppointmentsPage() {
     useEffect(() => {
         const fetchAppointments = async () => {
             try {
-                const res = await fetch(`https://backend-hvbb.onrender.com/api/admin/appointments`, {
+                const res = await fetch(`http://localhost:5000/api/admin/appointments`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
