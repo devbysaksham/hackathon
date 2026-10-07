@@ -230,7 +230,12 @@ export default function TodayQueuePage() {
                                                     ? app.appointment_code 
                                                     : <span className="text-slate-400">••••••••••</span>}
                                             </td>
-                                            <td className="px-5 py-3 font-medium text-slate-800">{app.patient_name}</td>
+                                            <td className="px-5 py-3 font-medium text-slate-800">
+                                                <div>{app.account_name}</div>
+                                                {app.patient_name !== app.account_name && (
+                                                    <div className="text-xs text-slate-500 font-medium bg-slate-100 inline-block px-1.5 py-0.5 rounded mt-0.5">Patient: {app.patient_name}</div>
+                                                )}
+                                            </td>
                                             <td className="px-5 py-3 text-slate-600">Dr. {app.doctor_name}</td>
                                             <td className="px-5 py-3 text-slate-600">
                                                 <div className="flex items-center gap-1">

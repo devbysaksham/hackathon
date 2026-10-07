@@ -398,29 +398,29 @@ export default function AIChatBox({ className }: { className?: string }) {
     };
 
     return (
-        <div className={cn("flex flex-col flex-1 min-h-0 bg-[#F9FAFB] dark:bg-slate-950 rounded-[2rem] border border-slate-200/60 dark:border-slate-800 shadow-2xl shadow-slate-300/30 dark:shadow-none overflow-hidden relative", className)}>
-            {/* Floating Glass Header */}
-            <div className="absolute top-0 inset-x-0 z-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 px-6 py-4 flex items-center justify-between shadow-[0_4px_30px_rgba(0,0,0,0.03)]">
+        <div className={cn("flex flex-col flex-1 min-h-0 bg-transparent overflow-hidden relative", className)}>
+            {/* Stable Glass Header */}
+            <div className="flex-none z-20 glass-panel border-b border-white/5 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-teal-500 to-blue-500 flex items-center justify-center text-white shadow-md shadow-teal-500/20">
+                    <div className="h-10 w-10 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(0,255,255,0.2)]">
                         <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
-                        <h2 className="font-bold text-[15px] text-slate-800 dark:text-slate-100 leading-none flex items-center gap-2">
+                        <h2 className="font-bold text-[15px] text-foreground leading-none flex items-center gap-2">
                             Swasth Setu AI 
                             <span className="relative flex h-2.5 w-2.5 ml-1">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary shadow-[0_0_8px_rgba(0,255,255,0.6)]"></span>
                             </span>
                         </h2>
-                        <span className="text-[11px] text-slate-500 font-medium">Always here to help</span>
+                        <span className="text-[11px] text-muted-foreground font-medium">Always here to help</span>
                     </div>
                 </div>
             </div>
 
             {/* Message Pane */}
             <ScrollArea className="flex-1 min-h-0 bg-transparent">
-                <div className="space-y-6 max-w-3xl mx-auto pt-24 pb-32 px-4 md:px-6">
+                <div className="space-y-6 max-w-3xl mx-auto py-6 px-4 md:px-6">
                     {chatMessages.map((msg, index) => (
                         <div key={index} className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className={cn("flex items-end gap-3", msg.sender === 'user' ? "flex-row-reverse" : "flex-row")}>
@@ -428,7 +428,7 @@ export default function AIChatBox({ className }: { className?: string }) {
                                     {msg.sender === 'user' ? (
                                         <ProfileAvatar name={user?.name || 'User'} size="sm" />
                                     ) : (
-                                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-teal-500 to-blue-500 flex items-center justify-center text-white shadow-sm shadow-teal-500/20">
+                                        <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_10px_rgba(0,255,255,0.2)]">
                                             <Bot className="h-4 w-4" />
                                         </div>
                                     )}
@@ -436,11 +436,11 @@ export default function AIChatBox({ className }: { className?: string }) {
                                 <div className={cn(
                                     "p-4 max-w-[85%] text-[14px] leading-relaxed shadow-sm transition-all relative overflow-hidden",
                                     msg.sender === 'user'
-                                        ? "bg-gradient-to-br from-teal-500 to-emerald-500 text-white rounded-[1.5rem] rounded-tr-sm shadow-teal-500/10 font-medium"
-                                        : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-[1.5rem] rounded-tl-sm border border-slate-200/60 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
+                                        ? "bg-primary/20 text-primary rounded-[1.5rem] rounded-tr-sm shadow-[0_0_15px_rgba(0,255,255,0.1)] border border-primary/20 font-medium"
+                                        : "glass-card text-foreground rounded-[1.5rem] rounded-tl-sm border border-white/10"
                                 )}>
                                     {msg.sender === 'user' && (
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                     )}
                                     <p className="whitespace-pre-line relative z-10">{msg.text}</p>
                                 </div>
@@ -708,13 +708,13 @@ export default function AIChatBox({ className }: { className?: string }) {
                     {/* AI typing state */}
                     {isTyping && (
                         <div className="flex items-end gap-3 animate-in fade-in duration-300">
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-teal-500 to-blue-500 flex items-center justify-center text-white shadow-md shadow-teal-500/20 shrink-0 mb-1">
+                            <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_10px_rgba(0,255,255,0.2)] shrink-0 mb-1">
                                 <Bot className="h-4 w-4" />
                             </div>
-                            <div className="px-5 py-4 rounded-[1.5rem] rounded-tl-sm bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 flex items-center gap-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                                <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce" style={{ animationDelay: '0ms' }} />
-                                <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce" style={{ animationDelay: '150ms' }} />
-                                <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce" style={{ animationDelay: '300ms' }} />
+                            <div className="px-5 py-4 rounded-[1.5rem] rounded-tl-sm glass-card flex items-center gap-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
+                                <span className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <span className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <span className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '300ms' }} />
                             </div>
                         </div>
                     )}
@@ -723,23 +723,23 @@ export default function AIChatBox({ className }: { className?: string }) {
             </ScrollArea>
 
             {/* Input Form Pill */}
-            <div className="absolute bottom-6 inset-x-0 px-4 md:px-8 z-20 pointer-events-none flex justify-center">
-                <form onSubmit={handleSendMessage} className="pointer-events-auto flex gap-2 items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 rounded-full p-2 pl-5 focus-within:ring-4 focus-within:ring-teal-500/15 focus-within:border-teal-400/50 transition-all shadow-[0_8px_30px_rgba(0,0,0,0.08)] w-full max-w-3xl">
-                    <button type="button" className="text-slate-400 hover:text-teal-600 transition-colors shrink-0 flex items-center justify-center group">
+            <div className="flex-none px-4 pb-4 pt-2 z-20 flex justify-center bg-transparent">
+                <form onSubmit={handleSendMessage} className="flex gap-2 items-center glass-card rounded-full p-2 pl-5 focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary/50 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.3)] w-full max-w-3xl">
+                    <button type="button" className="text-muted-foreground hover:text-primary transition-colors shrink-0 flex items-center justify-center group">
                         <Paperclip className="h-[22px] w-[22px] group-hover:scale-110 transition-transform" />
                     </button>
                     <Input
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Describe your symptoms to Swasthya AI..."
+                        placeholder="Describe your symptoms to Swasth Setu AI..."
                         disabled={isTyping}
-                        className="flex-1 bg-transparent border-none h-12 px-3 text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none font-medium placeholder:text-slate-400 placeholder:font-normal"
+                        className="flex-1 bg-transparent border-none h-12 px-3 text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none font-medium text-foreground placeholder:text-muted-foreground/70 placeholder:font-normal"
                     />
                     <Button 
                         type="submit" 
                         disabled={isTyping || !input.trim()}
                         size="icon" 
-                        className="bg-teal-500 hover:bg-teal-600 text-white rounded-full shrink-0 h-[42px] w-[42px] transition-all hover:scale-105 active:scale-95 shadow-md shadow-teal-500/25 cursor-pointer disabled:opacity-50 disabled:hover:scale-100"
+                        className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 rounded-full shrink-0 h-[42px] w-[42px] transition-all hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(0,255,255,0.2)] cursor-pointer disabled:opacity-50 disabled:hover:scale-100"
                     >
                         <Send className="h-[18px] w-[18px] ml-0.5" />
                     </Button>

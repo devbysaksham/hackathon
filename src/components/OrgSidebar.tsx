@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Building2, LayoutDashboard, LogOut, Settings } from 'lucide-react';
+import { Building2, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function OrgSidebar() {
@@ -12,6 +12,7 @@ export default function OrgSidebar() {
     const menuItems = [
         { href: '/org-dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { href: '/org-dashboard/hospitals', icon: Building2, label: 'Hospitals' },
+        { href: '/org-dashboard/patients', icon: Users, label: 'Patients' },
         { href: '/org-dashboard/settings', icon: Settings, label: 'Settings' },
     ];
 

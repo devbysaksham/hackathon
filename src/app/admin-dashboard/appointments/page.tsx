@@ -18,6 +18,7 @@ interface Appointment {
     doctor_name: string;
     doctor_specialization: string;
     patient_name: string;
+    account_name: string;
     patient_phone: string;
 }
 
@@ -71,8 +72,11 @@ export default function AdminAppointmentsPage() {
             <tr key={app.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4 font-medium">#{app.id}</td>
                 <td className="px-6 py-4">
-                    <div className="font-medium text-slate-900">{app.patient_name}</div>
-                    <div className="text-xs text-slate-500">{app.patient_phone}</div>
+                    <div className="font-medium text-slate-900">{app.account_name}</div>
+                    {app.patient_name !== app.account_name && (
+                        <div className="text-xs text-slate-500 font-medium bg-slate-100 inline-block px-1.5 py-0.5 rounded mt-0.5">Patient: {app.patient_name}</div>
+                    )}
+                    <div className="text-xs text-slate-500 mt-0.5">{app.patient_phone}</div>
                 </td>
                 <td className="px-6 py-4">
                     <div className="font-medium text-slate-900">Dr. {app.doctor_name}</div>

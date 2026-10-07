@@ -1,55 +1,85 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, MessageSquare, Calendar, FolderHeart, Pill, User } from 'lucide-react';
+import { Home, MessageSquare, Calendar, FolderHeart, Pill, ShieldCheck, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAppStore } from '@/store/useAppStore';
+import API from '@/lib/api';
 
 export default function BottomNav() {
     const pathname = usePathname();
+    const { token, user } = useAppStore();
+    const [pendingCount, setPendingCount] = useState(0);
+
+    useEffect(() => {
+        // Only fetch for patient role — doctors/admins don't use this nav
+        if (!token || !user || user.role !== 'patient') return;
+        const fetchPending = async () => {
+            try {
+                const res = await API.get('/doctor-access/incoming-requests');
+                const pending = (res.data.data || []).filter((r: any) => r.status === 'pending');
+                setPendingCount(pending.length);
+            } catch {/* silent */}
+        };
+        fetchPending();
+        // Refresh every 60s
+        const interval = setInterval(fetchPending, 60000);
+        return () => clearInterval(interval);
+    }, [token, user?.role]);
 
     const navItems = [
-        { name: 'Home', path: '/app/home', icon: Home },
-        { name: 'Chat', path: '/app/chat', icon: MessageSquare },
-        { name: 'Visits', path: '/app/appointments', icon: Calendar },
-        { name: 'Records', path: '/app/records', icon: FolderHeart },
-        { name: 'Rx', path: '/app/medicines', icon: Pill },
-        { name: 'Profile', path: '/app/profile', icon: User },
+        { name: 'Home', path: '/app/home', icon: Home, badge: 0 },
+        { name: 'Chat', path: '/app/chat', icon: MessageSquare, badge: 0 },
+        { name: 'Visits', path: '/app/appointments', icon: Calendar, badge: 0 },
+        { name: 'Records', path: '/app/records', icon: FolderHeart, badge: 0 },
+        { name: 'Rx', path: '/app/medicines', icon: Pill, badge: 0 },
+        { name: 'Doctors', path: '/app/requests', icon: ShieldCheck, badge: pendingCount },
+        { name: 'Me', path: '/app/profile', icon: User, badge: 0 },
     ];
 
     return (
-        <div className="backdrop-blur-2xl bg-white/80 dark:bg-slate-900/80 border border-white/50 dark:border-slate-700/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] rounded-[2.5rem] px-3 py-2.5 flex items-center justify-between mx-auto max-w-sm relative">
+        <div className="glass-card rounded-[2.5rem] px-1.5 py-2 flex items-center justify-between mx-auto max-w-[380px] relative overflow-hidden">
+            {/* Ambient glow */}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+            
             {navItems.map((item) => {
-                const isActive = pathname.startsWith(item.path);
+                const isActive = pathname === item.path || (item.path !== '/app' && item.path !== '/app/home' && pathname.startsWith(item.path));
                 return (
                     <Link
                         key={item.path}
                         href={item.path}
                         className={cn(
-                            "relative flex flex-col items-center justify-center w-[3.5rem] h-[3.5rem] rounded-[1.25rem] transition-all duration-300 gap-1 z-10",
-                            isActive 
-                                ? "text-indigo-600 bg-indigo-50/80 dark:bg-indigo-500/20 dark:text-indigo-300 shadow-sm shadow-indigo-100 dark:shadow-none" 
-                                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            "relative flex flex-col items-center justify-center w-[2.8rem] h-[3.3rem] rounded-[1rem] transition-all duration-300 gap-0.5 z-10",
+                            isActive
+                                ? "text-primary"
+                                : "text-muted-foreground hover:text-foreground"
                         )}
                     >
-                        <item.icon className={cn(
-                            "h-5 w-5 transition-all duration-300", 
-                            isActive ? "stroke-[2.5px] scale-110" : "stroke-[1.5px]"
-                        )} />
+                        {isActive && (
+                            <span className="absolute inset-0 rounded-[1.2rem] bg-primary/10 shadow-[inset_0_0_12px_rgba(0,255,255,0.1)] border border-primary/20" />
+                        )}
+                        <div className="relative">
+                            <item.icon className={cn(
+                                "h-[18px] w-[18px] transition-all duration-300 relative z-10",
+                                isActive ? "stroke-[2.5px] scale-110 drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]" : "stroke-[1.5px]"
+                            )} />
+                            {item.badge > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-destructive border border-background text-[9px] font-extrabold text-white flex items-center justify-center shadow-[0_0_8px_rgba(255,0,0,0.6)] z-20">
+                                    {item.badge > 9 ? '9+' : item.badge}
+                                </span>
+                            )}
+                        </div>
                         <span className={cn(
-                            "text-[9px] tracking-tight transition-all duration-200",
-                            isActive ? "font-bold opacity-100" : "font-medium opacity-80"
+                            "text-[9px] tracking-tight transition-all duration-200 relative z-10",
+                            isActive ? "font-bold drop-shadow-[0_0_4px_rgba(0,255,255,0.3)] text-primary" : "font-medium opacity-70 text-muted-foreground"
                         )}>
                             {item.name}
                         </span>
-                        {isActive && (
-                            <span className="absolute -bottom-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 animate-in zoom-in" />
-                        )}
                     </Link>
                 );
             })}
         </div>
     );
 }
-

@@ -12,11 +12,15 @@ export default function OrgHospitalsPage() {
     const [isCreating, setIsCreating] = useState(false);
     const [editingHospital, setEditingHospital] = useState<any>(null);
     const [formData, setFormData] = useState({
-        name: '', category: 'private', address: '', contactEmail: '', contactPhone: '', latitude: '', longitude: '', googleMapsLink: '', adminName: '', adminEmail: '', adminPassword: ''
+        name: '', category: 'private', address: '', contactEmail: '', contactPhone: '', latitude: '', longitude: '', googleMapsLink: '', 
+        adminName: '', adminEmail: '', adminPassword: '',
+        receptionName: '', receptionEmail: '', receptionPassword: ''
     });
     const [editData, setEditData] = useState({
-        name: '', category: 'private', address: '', contactEmail: '', contactPhone: '', latitude: '', longitude: '', googleMapsLink: ''
+        name: '', category: 'private', address: '', contactEmail: '', contactPhone: '', latitude: '', longitude: '', googleMapsLink: '',
+        receiptHeaderText: '', receiptHeaderSubtext: '', receiptColor: '#2e7d32'
     });
+    const [receptionEdit, setReceptionEdit] = useState({ receptionName: '', receptionEmail: '', receptionPassword: '' });
 
     const fetchHospitals = async () => {
         try {
@@ -45,7 +49,11 @@ export default function OrgHospitalsPage() {
             if (res.data.success) {
                 toast.success('Hospital registered successfully');
                 setIsCreating(false);
-                setFormData({ name: '', category: 'private', address: '', contactEmail: '', contactPhone: '', latitude: '', longitude: '', googleMapsLink: '', adminName: '', adminEmail: '', adminPassword: '' });
+                setFormData({ 
+                    name: '', category: 'private', address: '', contactEmail: '', contactPhone: '', latitude: '', longitude: '', googleMapsLink: '', 
+                    adminName: '', adminEmail: '', adminPassword: '',
+                    receptionName: '', receptionEmail: '', receptionPassword: ''
+                });
                 fetchHospitals();
             }
         } catch (err: any) {
@@ -63,8 +71,12 @@ export default function OrgHospitalsPage() {
             contactPhone: hospital.contact_phone || '',
             latitude: hospital.latitude ? hospital.latitude.toString() : '',
             longitude: hospital.longitude ? hospital.longitude.toString() : '',
-            googleMapsLink: hospital.google_maps_link || ''
+            googleMapsLink: hospital.google_maps_link || '',
+            receiptHeaderText: hospital.receipt_header_text || '',
+            receiptHeaderSubtext: hospital.receipt_header_subtext || '',
+            receiptColor: hospital.receipt_color || '#2e7d32'
         });
+        setReceptionEdit({ receptionName: '', receptionEmail: '', receptionPassword: '' });
     };
 
     const handleEdit = async (e: React.FormEvent) => {
@@ -77,6 +89,10 @@ export default function OrgHospitalsPage() {
             };
             const res = await API.put(`/hospitals/${editingHospital.id}`, dataToSubmit);
             if (res.data.success) {
+                // Also update receptionist credentials if email is provided
+                if (receptionEdit.receptionEmail) {
+                    await API.put(`/hospitals/${editingHospital.id}/receptionist`, receptionEdit);
+                }
                 toast.success('Hospital updated successfully');
                 setEditingHospital(null);
                 fetchHospitals();
@@ -109,7 +125,7 @@ export default function OrgHospitalsPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Category</label>
-                                <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
+                                <Select value={formData.category || ''} onValueChange={v => setFormData({...formData, category: v || 'private'})}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="private">Private</SelectItem>
@@ -157,6 +173,24 @@ export default function OrgHospitalsPage() {
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">Password</label>
                                     <Input required type="password" value={formData.adminPassword} onChange={e => setFormData({...formData, adminPassword: e.target.value})} placeholder="••••••••" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-slate-100 dark:border-slate-800 pt-4 mt-4">
+                            <h3 className="text-md font-semibold mb-3">Receipt Screen Login (Receptionist)</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Name</label>
+                                    <Input required value={formData.receptionName} onChange={e => setFormData({...formData, receptionName: e.target.value})} placeholder="e.g. Front Desk" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Email</label>
+                                    <Input type="email" required value={formData.receptionEmail} onChange={e => setFormData({...formData, receptionEmail: e.target.value})} placeholder="reception@hospital.com" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Password</label>
+                                    <Input type="password" required value={formData.receptionPassword} onChange={e => setFormData({...formData, receptionPassword: e.target.value})} placeholder="••••••••" />
                                 </div>
                             </div>
                         </div>
@@ -224,7 +258,7 @@ export default function OrgHospitalsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">Category</label>
-                                    <Select value={editData.category} onValueChange={v => setEditData({...editData, category: v})}>
+                                    <Select value={editData.category || ''} onValueChange={v => setEditData({...editData, category: v || 'private'})}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="private">Private</SelectItem>
@@ -257,6 +291,27 @@ export default function OrgHospitalsPage() {
                                     <Input value={editData.googleMapsLink} onChange={e => setEditData({...editData, googleMapsLink: e.target.value})} placeholder="https://maps.google.com/..." />
                                 </div>
                             </div>
+
+
+                            <div className="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+                                <h3 className="text-sm font-semibold mb-1 text-slate-600 dark:text-slate-400">Receipt Screen Login (Receptionist)</h3>
+                                <p className="text-xs text-slate-400 mb-3">Leave email blank to keep existing credentials unchanged. Fill any field to update.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Name</label>
+                                        <Input value={receptionEdit.receptionName} onChange={e => setReceptionEdit({...receptionEdit, receptionName: e.target.value})} placeholder="e.g. Front Desk" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">New Email</label>
+                                        <Input type="email" value={receptionEdit.receptionEmail} onChange={e => setReceptionEdit({...receptionEdit, receptionEmail: e.target.value})} placeholder="new@hospital.com" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">New Password</label>
+                                        <Input type="password" value={receptionEdit.receptionPassword} onChange={e => setReceptionEdit({...receptionEdit, receptionPassword: e.target.value})} placeholder="Leave blank to keep current" />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="pt-4 flex justify-end gap-3">
                                 <Button type="button" variant="outline" onClick={() => setEditingHospital(null)}>Cancel</Button>
                                 <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white">Save Changes</Button>

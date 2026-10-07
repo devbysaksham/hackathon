@@ -27,14 +27,14 @@ export default function RootLayout({
   return (
       <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-[100dvh] overflow-hidden antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} dark h-[100dvh] overflow-hidden antialiased`}
     >
-      <body className="h-[100dvh] overflow-hidden flex flex-col bg-slate-50/50 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+      <body className="h-[100dvh] overflow-hidden flex flex-col bg-background text-foreground selection:bg-primary/20 selection:text-primary">
         <QueryProvider>
           <main className="flex-1 flex flex-col min-h-0 relative z-10">
             {children}
           </main>
-          <Toaster position="top-right" richColors />
+          <Toaster position="top-right" richColors theme="dark" />
         </QueryProvider>
       </body>
     </html>

@@ -31,11 +31,39 @@ function parsePages(reportFile?: string): string[] {
     return [];
 }
 
-function downloadPage(src: string, index: number) {
-    const a = document.createElement('a');
-    a.href = src;
-    a.download = `medical-record-page-${index + 1}.${src.startsWith('data:application/pdf') ? 'pdf' : 'jpg'}`;
-    a.click();
+function downloadImagesAsPdf(images: string[], title: string = 'Medical Record') {
+    const printWindow = window.open('', '', 'height=800,width=800');
+    if (!printWindow) return;
+    
+    // For PDFs, just open it in a new window to let the browser handle saving/printing
+    if (images.length === 1 && (images[0].startsWith('data:application/pdf') || images[0].endsWith('.pdf'))) {
+        printWindow.location.href = images[0];
+        return;
+    }
+
+    const html = `
+        <html>
+            <head>
+                <title>${title}</title>
+                <style>
+                    body { margin: 0; padding: 20px; background: #fff; text-align: center; }
+                    img { max-width: 100%; height: auto; display: block; margin: 0 auto 20px auto; page-break-inside: avoid; break-inside: avoid; }
+                    @media print {
+                        body { padding: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${images.map(img => `<img src="${img}" />`).join('')}
+                <script>
+                    window.onload = function() { window.print(); window.close(); }
+                </script>
+            </body>
+        </html>
+    `;
+    
+    printWindow.document.write(html);
+    printWindow.document.close();
 }
 
 export default function MedicalFileCard({ record }: MedicalFileCardProps) {
@@ -59,6 +87,76 @@ export default function MedicalFileCard({ record }: MedicalFileCardProps) {
         setLightboxOpen(true);
     };
 
+    const handleDownloadPDF = () => {
+        const printWindow = window.open('', '', 'height=800,width=800');
+        if (!printWindow) return;
+        
+        const html = `
+            <html>
+                <head>
+                    <title>Medical Record - ${dateStr}</title>
+                    <style>
+                        body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #333; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+                        .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 20px; }
+                        h1 { font-size: 24px; margin: 0; color: #1e293b; }
+                        .meta { color: #64748b; font-size: 14px; margin-top: 5px; }
+                        .section { margin-bottom: 24px; }
+                        .section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 8px; font-weight: bold; }
+                        .content { background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; white-space: pre-wrap; }
+                        @media print {
+                            body { padding: 0; }
+                            .content { border: 1px solid #ccc; }
+                            button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Medical Record</h1>
+                        <div class="meta">Date: ${dateStr} ${record.doctor_name ? '| Doctor: Dr. ' + record.doctor_name : ''}</div>
+                    </div>
+                    
+                    ${record.diagnosis ? `
+                    <div class="section">
+                        <div class="section-title">Diagnosis</div>
+                        <div class="content">${record.diagnosis}</div>
+                    </div>` : ''}
+
+                    ${record.symptoms ? `
+                    <div class="section">
+                        <div class="section-title">Symptoms</div>
+                        <div class="content">${record.symptoms}</div>
+                    </div>` : ''}
+
+                    ${record.doctor_notes ? `
+                    <div class="section">
+                        <div class="section-title">Doctor's Notes</div>
+                        <div class="content">${record.doctor_notes}</div>
+                    </div>` : ''}
+
+                    ${record.follow_up_advice ? `
+                    <div class="section">
+                        <div class="section-title">Follow-up Advice</div>
+                        <div class="content">${record.follow_up_advice}</div>
+                    </div>` : ''}
+
+                    ${record.visit_summary ? `
+                    <div class="section">
+                        <div class="section-title">Visit Summary</div>
+                        <div class="content">${record.visit_summary}</div>
+                    </div>` : ''}
+                    
+                    <script>
+                        window.onload = function() { window.print(); window.close(); }
+                    </script>
+                </body>
+            </html>
+        `;
+        
+        printWindow.document.write(html);
+        printWindow.document.close();
+    };
+
     // If no pages: show a minimal text record card
     if (pages.length === 0) {
         return (
@@ -72,9 +170,18 @@ export default function MedicalFileCard({ record }: MedicalFileCardProps) {
                             {record.visit_summary || record.diagnosis || 'Medical Record'}
                         </span>
                     </div>
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
-                        <Calendar className="h-3 w-3" />
-                        {dateStr}
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+                            <Calendar className="h-3 w-3" />
+                            {dateStr}
+                        </div>
+                        <button 
+                            onClick={handleDownloadPDF}
+                            className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+                            title="Download PDF"
+                        >
+                            <Download className="h-4 w-4" />
+                        </button>
                     </div>
                 </div>
                 {(record.diagnosis || record.symptoms || record.follow_up_advice) && (
@@ -180,19 +287,19 @@ export default function MedicalFileCard({ record }: MedicalFileCardProps) {
                     {/* Download buttons */}
                     <div className="flex items-center gap-1.5">
                         <button
-                            onClick={() => downloadPage(currentSrc, currentPage)}
+                            onClick={() => downloadImagesAsPdf([currentSrc], `Medical Record - Page ${currentPage + 1}`)}
                             className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-800/40 transition-colors"
                         >
                             <Download className="h-3 w-3" />
-                            This Page
+                            Save as PDF
                         </button>
                         {pages.length > 1 && (
                             <button
-                                onClick={() => pages.forEach((p, i) => setTimeout(() => downloadPage(p, i), i * 300))}
+                                onClick={() => downloadImagesAsPdf(pages, 'Medical Record - All Pages')}
                                 className="flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2.5 py-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                             >
                                 <Download className="h-3 w-3" />
-                                All Pages
+                                Save All as PDF
                             </button>
                         )}
                     </div>
@@ -224,7 +331,7 @@ export default function MedicalFileCard({ record }: MedicalFileCardProps) {
                                 <ZoomOut className="h-4 w-4" />
                             </button>
                             <button
-                                onClick={(e) => { e.stopPropagation(); downloadPage(currentSrc, currentPage); }}
+                                onClick={(e) => { e.stopPropagation(); downloadImagesAsPdf([currentSrc]); }}
                                 className="p-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 text-white transition-colors"
                             >
                                 <Download className="h-4 w-4" />

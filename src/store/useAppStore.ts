@@ -5,7 +5,7 @@ export interface User {
     id: string;
     name: string;
     email: string;
-    role: 'patient' | 'admin' | 'doctor';
+    role: 'patient' | 'admin' | 'doctor' | 'receptionist' | 'org_admin';
     age?: number;
     gender?: string;
     phone?: string;
@@ -15,6 +15,8 @@ export interface User {
     experience?: number;
     fee?: number;
     avatar_url?: string;
+    doctorId?: string;
+    hospital_id?: string;
 }
 
 interface ChatMessage {
@@ -23,6 +25,7 @@ interface ChatMessage {
     timestamp: Date;
     actionHint?: string;
     data?: any;
+    requestLocation?: boolean;
 }
 
 interface BookingState {

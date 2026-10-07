@@ -39,9 +39,13 @@ export default function AdminOverview() {
     };
 
     useEffect(() => {
-        if (!token || !user || user.role !== 'admin') {
+        if (!token || !user || !['admin', 'receptionist'].includes(user.role)) {
             toast.error('Unauthorized. Admin access only.');
             router.push('/login');
+            return;
+        }
+        if (user.role === 'receptionist') {
+            router.push('/admin-dashboard/receipts');
             return;
         }
         loadDashboardData();
@@ -51,12 +55,12 @@ export default function AdminOverview() {
         return (
             <div className="flex-1 flex flex-col items-center justify-center gap-4">
                 <div className="relative">
-                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center">
-                        <Loader2 className="h-7 w-7 text-indigo-500 animate-spin" />
+                    <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                        <Loader2 className="h-7 w-7 text-primary animate-spin" />
                     </div>
-                    <div className="absolute inset-0 rounded-full bg-indigo-200/30 animate-ping" />
+                    <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
                 </div>
-                <p className="text-sm text-slate-500 font-medium">Compiling dashboard metrics...</p>
+                <p className="text-sm text-muted-foreground font-medium">Compiling dashboard metrics...</p>
             </div>
         );
     }
@@ -193,26 +197,25 @@ export default function AdminOverview() {
     return (
         <div className="flex-1 space-y-6">
             {/* Gradient Header */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-blue-600 to-violet-600 p-6 text-white shadow-xl mx-6 mt-6">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4" />
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4" />
-                <div className="absolute top-12 right-20 w-6 h-6 bg-white/10 rounded-full" />
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-card to-card/80 p-6 text-foreground shadow-2xl shadow-black/20 mx-6 mt-6 border border-white/5">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-accent/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-2xl" />
 
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                            <ShieldCheck className="h-7 w-7 text-white" />
+                        <div className="h-14 w-14 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,255,0.2)]">
+                            <ShieldCheck className="h-7 w-7 text-primary" />
                         </div>
                         <div>
-                            <span className="text-[10px] uppercase tracking-[2px] font-bold text-white/50 block">Admin Console</span>
-                            <h1 className="text-2xl font-bold leading-tight">SwasthSetu Admin</h1>
-                            <p className="text-xs text-blue-100/60 font-medium mt-0.5">Clinical operations & financial overview</p>
+                            <span className="text-[10px] uppercase tracking-[2px] font-bold text-primary drop-shadow-[0_0_4px_rgba(0,255,255,0.5)] block">Admin Console</span>
+                            <h1 className="text-2xl font-bold leading-tight text-foreground">SwasthSetu Admin</h1>
+                            <p className="text-xs text-muted-foreground font-medium mt-0.5">Clinical operations & financial overview</p>
                         </div>
                     </div>
                     <Button
                         onClick={() => { logout(); router.push('/login'); }}
                         variant="ghost"
-                        className="bg-white/10 hover:bg-white/20 text-white rounded-2xl cursor-pointer border border-white/10 text-xs font-semibold"
+                        className="bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-2xl cursor-pointer border border-destructive/20 text-xs font-semibold transition-colors"
                     >
                         <LogOut className="h-4 w-4 mr-1.5" />
                         Sign Out
@@ -222,15 +225,15 @@ export default function AdminOverview() {
 
             {/* Tab Navigation */}
             <div className="px-6">
-                <div className="flex gap-1 bg-white rounded-2xl p-1.5 shadow-sm border border-slate-100 w-fit">
+                <div className="flex gap-1 glass-panel rounded-2xl p-1.5 shadow-sm border border-white/5 w-fit">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer ${
                                 activeTab === tab.id
-                                    ? 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-md shadow-indigo-200/50'
-                                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                                    ? 'bg-primary/20 text-primary shadow-[0_0_12px_rgba(0,255,255,0.1)] border border-primary/20'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-white/5 border border-transparent'
                             }`}
                         >
                             <tab.icon className="h-3.5 w-3.5" />
@@ -246,15 +249,15 @@ export default function AdminOverview() {
                     {/* Metrics cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 px-6 animate-stagger">
                         {overviewCards.map((card, index) => (
-                            <div key={index} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+                            <div key={index} className="glass-card rounded-2xl p-4 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-0.5 border border-white/5">
                                 <div className="flex justify-between items-start mb-3">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{card.title}</span>
-                                    <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-sm`}>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{card.title}</span>
+                                    <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-[0_0_12px_rgba(0,0,0,0.5)]`}>
                                         <card.icon className="h-4 w-4 text-white" />
                                     </div>
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none mb-1">{card.value}</h3>
-                                <p className="text-[10px] text-slate-400 font-medium">{card.desc}</p>
+                                <h3 className="text-2xl font-black text-foreground tracking-tight leading-none mb-1">{card.value}</h3>
+                                <p className="text-[10px] text-muted-foreground font-medium">{card.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -263,45 +266,46 @@ export default function AdminOverview() {
                     <div className="grid lg:grid-cols-3 gap-6 px-6 pb-8">
                         
                         {/* Revenue line chart */}
-                        <Card className="lg:col-span-2 border-slate-100 bg-white rounded-2xl shadow-sm overflow-hidden">
-                            <CardHeader className="pb-3 border-b bg-slate-50/50">
-                                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                                    <div className="h-8 w-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                                        <TrendingUp className="h-4 w-4 text-blue-500" />
+                        <Card className="lg:col-span-2 glass-card border-white/5 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden">
+                            <CardHeader className="pb-3 border-b border-white/5">
+                                <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+                                    <div className="h-8 w-8 rounded-xl bg-primary/20 border border-primary/20 flex items-center justify-center">
+                                        <TrendingUp className="h-4 w-4 text-primary" />
                                     </div>
                                     Revenue Trends
                                 </CardTitle>
-                                <CardDescription className="text-xs">Daily collection data (last 7 days)</CardDescription>
+                                <CardDescription className="text-xs text-muted-foreground">Daily collection data (last 7 days)</CardDescription>
                             </CardHeader>
                             <CardContent className="pt-6 h-72">
                                 {revenueData.length === 0 ? (
                                     <div className="h-full flex flex-col items-center justify-center gap-2">
-                                        <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center">
-                                            <BarChart3 className="h-7 w-7 text-blue-300" />
+                                        <div className="h-14 w-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                            <BarChart3 className="h-7 w-7 text-primary/50" />
                                         </div>
-                                        <p className="text-xs text-slate-400 font-medium">No financial data found yet.</p>
+                                        <p className="text-xs text-muted-foreground font-medium">No financial data found yet.</p>
                                     </div>
                                 ) : (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={revenueData}>
                                             <defs>
                                                 <linearGradient id="colorRevenueFill" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15}/>
-                                                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                                                    <stop offset="5%" stopColor="#00FFFF" stopOpacity={0.15}/>
+                                                    <stop offset="95%" stopColor="#00FFFF" stopOpacity={0}/>
                                                 </linearGradient>
                                                 <linearGradient id="colorRevenueStroke" x1="0" y1="0" x2="1" y2="0">
-                                                    <stop offset="0%" stopColor="#3B82F6" />
-                                                    <stop offset="100%" stopColor="#14B8A6" />
+                                                    <stop offset="0%" stopColor="#00FFFF" />
+                                                    <stop offset="100%" stopColor="#7C3AFF" />
                                                 </linearGradient>
                                             </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                            <XAxis dataKey="date" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
-                                            <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} unit="₹" />
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                                            <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" fontSize={10} tickLine={false} axisLine={false} />
+                                            <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} tickLine={false} axisLine={false} unit="₹" />
                                             <Tooltip 
-                                                contentStyle={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px', fontSize: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                                                labelStyle={{ fontWeight: 'bold', color: '#1E293B' }}
+                                                contentStyle={{ background: 'rgba(5,15,30,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', fontSize: '12px', boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}
+                                                labelStyle={{ fontWeight: 'bold', color: '#00FFFF' }}
+                                                itemStyle={{ color: 'rgba(255,255,255,0.8)' }}
                                             />
-                                            <Area type="monotone" dataKey="revenue" stroke="url(#colorRevenueStroke)" strokeWidth={3} fill="url(#colorRevenueFill)" dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                                            <Area type="monotone" dataKey="revenue" stroke="url(#colorRevenueStroke)" strokeWidth={3} fill="url(#colorRevenueFill)" dot={{ fill: '#00FFFF', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 )}
@@ -309,25 +313,25 @@ export default function AdminOverview() {
                         </Card>
 
                         {/* Operations Summary */}
-                        <Card className="border-slate-100 bg-white rounded-2xl shadow-sm overflow-hidden">
-                            <CardHeader className="pb-3 border-b bg-slate-50/50">
-                                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                                    <div className="h-8 w-8 rounded-xl bg-indigo-50 flex items-center justify-center">
-                                        <BarChart3 className="h-4 w-4 text-indigo-500" />
+                        <Card className="glass-card border-white/5 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden">
+                            <CardHeader className="pb-3 border-b border-white/5">
+                                <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+                                    <div className="h-8 w-8 rounded-xl bg-accent/20 border border-accent/20 flex items-center justify-center">
+                                        <BarChart3 className="h-4 w-4 text-accent" />
                                     </div>
                                     Efficiency
                                 </CardTitle>
-                                <CardDescription className="text-xs">Today's operational breakdown</CardDescription>
+                                <CardDescription className="text-xs text-muted-foreground">Today's operational breakdown</CardDescription>
                             </CardHeader>
                             <CardContent className="pt-6 space-y-5 text-xs">
                                 <div className="space-y-2">
                                     <div className="flex justify-between font-semibold">
-                                        <span className="text-slate-500">Confirmed Bookings</span>
-                                        <span className="text-slate-800">{stats.confirmedAppointments} / {stats.totalAppointments}</span>
+                                        <span className="text-muted-foreground">Confirmed Bookings</span>
+                                        <span className="text-foreground">{stats.confirmedAppointments} / {stats.totalAppointments}</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                    <div className="w-full bg-white/5 h-2.5 rounded-full overflow-hidden">
                                         <div 
-                                            className="bg-gradient-to-r from-blue-500 to-teal-500 h-full rounded-full transition-all duration-500" 
+                                            className="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(0,255,255,0.4)]" 
                                             style={{ width: `${stats.totalAppointments > 0 ? (stats.confirmedAppointments / stats.totalAppointments) * 100 : 0}%` }}
                                         />
                                     </div>
@@ -335,10 +339,10 @@ export default function AdminOverview() {
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between font-semibold">
-                                        <span className="text-slate-500">Pending Billing</span>
-                                        <span className="text-slate-800">{stats.pendingPayments} / {stats.totalAppointments}</span>
+                                        <span className="text-muted-foreground">Pending Billing</span>
+                                        <span className="text-foreground">{stats.pendingPayments} / {stats.totalAppointments}</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                    <div className="w-full bg-white/5 h-2.5 rounded-full overflow-hidden">
                                         <div 
                                             className="bg-gradient-to-r from-amber-400 to-orange-500 h-full rounded-full transition-all duration-500" 
                                             style={{ width: `${stats.totalAppointments > 0 ? (stats.pendingPayments / stats.totalAppointments) * 100 : 0}%` }}
@@ -348,10 +352,10 @@ export default function AdminOverview() {
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between font-semibold">
-                                        <span className="text-slate-500">Emergency Cases</span>
-                                        <span className="text-slate-800">{stats.emergencyCases} Cases</span>
+                                        <span className="text-muted-foreground">Emergency Cases</span>
+                                        <span className="text-foreground">{stats.emergencyCases} Cases</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                    <div className="w-full bg-white/5 h-2.5 rounded-full overflow-hidden">
                                         <div 
                                             className="bg-gradient-to-r from-rose-500 to-red-500 h-full rounded-full transition-all duration-500" 
                                             style={{ width: `${stats.totalAppointments > 0 ? (stats.emergencyCases / stats.totalAppointments) * 100 : 0}%` }}
@@ -368,35 +372,35 @@ export default function AdminOverview() {
             {activeTab === 'statistics' && (
                 <div className="space-y-6 px-6 pb-8">
                     
-                    {/* Section: Today's Operations */}
+                {/* Section: Today's Operations */}
                     <div>
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
-                                <Zap className="h-4 w-4 text-white" />
+                            <div className="h-8 w-8 rounded-xl bg-primary/20 border border-primary/20 flex items-center justify-center">
+                                <Zap className="h-4 w-4 text-primary" />
                             </div>
                             <div>
-                                <h2 className="text-base font-bold text-slate-800">Today's Operations</h2>
-                                <p className="text-[10px] text-slate-400 font-medium">Real-time clinic metrics</p>
+                                <h2 className="text-base font-bold text-foreground">Today's Operations</h2>
+                                <p className="text-[10px] text-muted-foreground font-medium">Real-time clinic metrics</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {todayStats.map((card, index) => (
                                 <div 
                                     key={index} 
-                                    className="relative bg-white rounded-2xl border border-slate-100 shadow-sm p-5 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group"
+                                    className="relative glass-card rounded-2xl border border-white/5 p-5 hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-1 overflow-hidden group"
                                 >
                                     {/* Background glow effect */}
                                     <div className={`absolute -top-8 -right-8 w-24 h-24 rounded-full ${card.bgGlow} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                                     
                                     <div className="relative z-10">
                                         <div className="flex justify-between items-start mb-4">
-                                            <div className={`h-11 w-11 rounded-2xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-md`}>
+                                            <div className={`h-11 w-11 rounded-2xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-[0_0_12px_rgba(0,0,0,0.4)]`}>
                                                 <card.icon className="h-5 w-5 text-white" />
                                             </div>
                                         </div>
-                                        <h3 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">{card.value}</h3>
-                                        <p className="text-[11px] font-bold text-slate-500 mt-1">{card.title}</p>
-                                        <p className="text-[10px] text-slate-400 font-medium">{card.desc}</p>
+                                        <h3 className="text-3xl font-black text-foreground tracking-tight leading-none mb-1">{card.value}</h3>
+                                        <p className="text-[11px] font-bold text-muted-foreground mt-1">{card.title}</p>
+                                        <p className="text-[10px] text-muted-foreground/70 font-medium">{card.desc}</p>
                                     </div>
                                 </div>
                             ))}
@@ -406,27 +410,27 @@ export default function AdminOverview() {
                     {/* Section: System Overview */}
                     <div>
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                                <Activity className="h-4 w-4 text-white" />
+                            <div className="h-8 w-8 rounded-xl bg-accent/20 border border-accent/20 flex items-center justify-center">
+                                <Activity className="h-4 w-4 text-accent" />
                             </div>
                             <div>
-                                <h2 className="text-base font-bold text-slate-800">System Overview</h2>
-                                <p className="text-[10px] text-slate-400 font-medium">Infrastructure & capacity metrics</p>
+                                <h2 className="text-base font-bold text-foreground">System Overview</h2>
+                                <p className="text-[10px] text-muted-foreground font-medium">Infrastructure & capacity metrics</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {systemCards.map((card, index) => (
                                 <div 
                                     key={index} 
-                                    className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+                                    className="glass-card rounded-2xl border border-white/5 p-5 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-0.5"
                                 >
                                     <div className="flex items-center gap-3 mb-3">
-                                        <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-sm`}>
+                                        <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-[0_0_10px_rgba(0,0,0,0.3)]`}>
                                             <card.icon className="h-4.5 w-4.5 text-white" />
                                         </div>
-                                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{card.title}</span>
+                                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">{card.title}</span>
                                     </div>
-                                    <h3 className="text-3xl font-black text-slate-800 tracking-tight leading-none">{card.value}</h3>
+                                    <h3 className="text-3xl font-black text-foreground tracking-tight leading-none">{card.value}</h3>
                                 </div>
                             ))}
                         </div>
@@ -435,23 +439,23 @@ export default function AdminOverview() {
                     {/* Section: Capacity Gauges */}
                     <div className="grid lg:grid-cols-2 gap-6">
                         {/* Today's Progress */}
-                        <Card className="border-slate-100 bg-white rounded-2xl shadow-sm overflow-hidden">
-                            <CardHeader className="pb-3 border-b bg-slate-50/50">
-                                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                                    <div className="h-8 w-8 rounded-xl bg-emerald-50 flex items-center justify-center">
-                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        <Card className="glass-card border-white/5 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden">
+                            <CardHeader className="pb-3 border-b border-white/5">
+                                <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+                                    <div className="h-8 w-8 rounded-xl bg-emerald-500/20 border border-emerald-500/20 flex items-center justify-center">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                                     </div>
                                     Today's Progress
                                 </CardTitle>
-                                <CardDescription className="text-xs">Appointment completion & queue status</CardDescription>
+                                <CardDescription className="text-xs text-muted-foreground">Appointment completion & queue status</CardDescription>
                             </CardHeader>
                             <CardContent className="pt-6 space-y-5 text-xs">
                                 <div className="space-y-2">
                                     <div className="flex justify-between font-semibold">
-                                        <span className="text-slate-500">Checked-in Queue</span>
-                                        <span className="text-slate-800">{stats.queueLength} of {stats.todayAppointments} expected</span>
+                                        <span className="text-muted-foreground">Checked-in Queue</span>
+                                        <span className="text-foreground">{stats.queueLength} of {stats.todayAppointments} expected</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                    <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden">
                                         <div 
                                             className="bg-gradient-to-r from-violet-500 to-purple-500 h-full rounded-full transition-all duration-700" 
                                             style={{ width: `${stats.todayAppointments > 0 ? (stats.queueLength / stats.todayAppointments) * 100 : 0}%` }}
@@ -460,10 +464,10 @@ export default function AdminOverview() {
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex justify-between font-semibold">
-                                        <span className="text-slate-500">Completed Sessions</span>
-                                        <span className="text-slate-800">{stats.completedToday} of {stats.todayAppointments} scheduled</span>
+                                        <span className="text-muted-foreground">Completed Sessions</span>
+                                        <span className="text-foreground">{stats.completedToday} of {stats.todayAppointments} scheduled</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                    <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden">
                                         <div 
                                             className="bg-gradient-to-r from-emerald-500 to-green-500 h-full rounded-full transition-all duration-700" 
                                             style={{ width: `${stats.todayAppointments > 0 ? (stats.completedToday / stats.todayAppointments) * 100 : 0}%` }}
@@ -472,10 +476,10 @@ export default function AdminOverview() {
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex justify-between font-semibold">
-                                        <span className="text-slate-500">Revenue Collected</span>
-                                        <span className="text-slate-800">₹{stats.todayRevenue?.toLocaleString?.() || stats.todayRevenue}</span>
+                                        <span className="text-muted-foreground">Revenue Collected</span>
+                                        <span className="text-foreground">₹{stats.todayRevenue?.toLocaleString?.() || stats.todayRevenue}</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                    <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden">
                                         <div 
                                             className="bg-gradient-to-r from-amber-400 to-orange-500 h-full rounded-full transition-all duration-700" 
                                             style={{ width: `${stats.totalRevenue > 0 ? Math.min((stats.todayRevenue / stats.totalRevenue) * 100 * 10, 100) : 0}%` }}
@@ -486,33 +490,33 @@ export default function AdminOverview() {
                         </Card>
 
                         {/* Quick Summary Grid */}
-                        <Card className="border-slate-100 bg-white rounded-2xl shadow-sm overflow-hidden">
-                            <CardHeader className="pb-3 border-b bg-slate-50/50">
-                                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                                    <div className="h-8 w-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                                        <BarChart3 className="h-4 w-4 text-blue-500" />
+                        <Card className="glass-card border-white/5 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden">
+                            <CardHeader className="pb-3 border-b border-white/5">
+                                <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+                                    <div className="h-8 w-8 rounded-xl bg-primary/20 border border-primary/20 flex items-center justify-center">
+                                        <BarChart3 className="h-4 w-4 text-primary" />
                                     </div>
                                     All-Time Summary
                                 </CardTitle>
-                                <CardDescription className="text-xs">Cumulative clinic performance</CardDescription>
+                                <CardDescription className="text-xs text-muted-foreground">Cumulative clinic performance</CardDescription>
                             </CardHeader>
                             <CardContent className="pt-6">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-blue-50/60 rounded-xl p-4 text-center">
-                                        <p className="text-2xl font-black text-blue-700">{stats.totalAppointments}</p>
-                                        <p className="text-[10px] text-blue-500 font-bold mt-1">Total Bookings</p>
+                                    <div className="bg-primary/10 border border-primary/10 rounded-xl p-4 text-center">
+                                        <p className="text-2xl font-black text-primary">{stats.totalAppointments}</p>
+                                        <p className="text-[10px] text-primary/70 font-bold mt-1">Total Bookings</p>
                                     </div>
-                                    <div className="bg-emerald-50/60 rounded-xl p-4 text-center">
-                                        <p className="text-2xl font-black text-emerald-700">₹{stats.totalRevenue?.toLocaleString?.() || stats.totalRevenue}</p>
-                                        <p className="text-[10px] text-emerald-500 font-bold mt-1">Total Revenue</p>
+                                    <div className="bg-emerald-500/10 border border-emerald-500/10 rounded-xl p-4 text-center">
+                                        <p className="text-2xl font-black text-emerald-400">₹{stats.totalRevenue?.toLocaleString?.() || stats.totalRevenue}</p>
+                                        <p className="text-[10px] text-emerald-400/70 font-bold mt-1">Total Revenue</p>
                                     </div>
-                                    <div className="bg-violet-50/60 rounded-xl p-4 text-center">
-                                        <p className="text-2xl font-black text-violet-700">{stats.totalPatients}</p>
-                                        <p className="text-[10px] text-violet-500 font-bold mt-1">Registered Patients</p>
+                                    <div className="bg-accent/10 border border-accent/10 rounded-xl p-4 text-center">
+                                        <p className="text-2xl font-black text-accent">{stats.totalPatients}</p>
+                                        <p className="text-[10px] text-accent/70 font-bold mt-1">Registered Patients</p>
                                     </div>
-                                    <div className="bg-rose-50/60 rounded-xl p-4 text-center">
-                                        <p className="text-2xl font-black text-rose-700">{stats.emergencyCases}</p>
-                                        <p className="text-[10px] text-rose-500 font-bold mt-1">Emergency Cases</p>
+                                    <div className="bg-destructive/10 border border-destructive/10 rounded-xl p-4 text-center">
+                                        <p className="text-2xl font-black text-destructive">{stats.emergencyCases}</p>
+                                        <p className="text-[10px] text-destructive/70 font-bold mt-1">Emergency Cases</p>
                                     </div>
                                 </div>
                             </CardContent>

@@ -128,37 +128,37 @@ export default function AppAppointmentsPage() {
                     </div>
                     <div className="absolute inset-0 rounded-full bg-blue-200/30 animate-ping" />
                 </div>
-                <p className="text-sm text-slate-500 font-medium">Loading appointments...</p>
+                <p className="text-sm text-muted-foreground font-medium">Loading appointments...</p>
             </div>
         );
     }
 
     const renderEmpty = (icon: React.ReactNode, message: string, sub: string) => (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center mb-4 shadow-sm">
+            <div className="h-20 w-20 rounded-3xl glass-card flex items-center justify-center mb-4">
                 {icon}
             </div>
-            <p className="text-sm font-semibold text-slate-600 mb-1">{message}</p>
-            <p className="text-xs text-slate-400 max-w-[240px]">{sub}</p>
+            <p className="text-sm font-semibold text-foreground mb-1">{message}</p>
+            <p className="text-xs text-muted-foreground max-w-[240px]">{sub}</p>
         </div>
     );
 
     return (
         <div className="space-y-4 pb-6 w-full max-w-full animate-fade-in-up">
             {/* Gradient Header Banner */}
-            <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-600 p-5 text-white shadow-xl shadow-indigo-500/20 w-full max-w-full">
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full filter blur-xl" />
-                <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-white/5 rounded-full filter blur-xl" />
+            <div className="relative overflow-hidden rounded-[24px] glass-card p-5 border border-white/5 w-full max-w-full">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full filter blur-[40px]" />
+                <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-accent/15 rounded-full filter blur-[30px]" />
                 <div className="relative z-10 flex items-start justify-between gap-3">
                     <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-1.5">
-                            <CalendarCheck className="h-[18px] w-[18px] shrink-0 text-indigo-100" />
-                            <span className="text-[11px] font-bold text-indigo-100/90 uppercase tracking-widest">My Appointments</span>
+                            <CalendarCheck className="h-[18px] w-[18px] shrink-0 text-primary" />
+                            <span className="text-[11px] font-bold text-primary/80 uppercase tracking-widest">My Appointments</span>
                         </div>
-                        <h2 className="text-[22px] font-extrabold leading-tight tracking-tight">Your Visits</h2>
-                        <p className="text-[13px] font-medium text-indigo-100 mt-1">{appointments.length} total &middot; {confirmed.length} confirmed</p>
+                        <h2 className="text-[22px] font-extrabold leading-tight tracking-tight text-foreground">Your Visits</h2>
+                        <p className="text-[13px] font-medium text-muted-foreground mt-1">{appointments.length} total &middot; {confirmed.length} confirmed</p>
                     </div>
-                    <Button asChild size="sm" className="shrink-0 bg-white/20 backdrop-blur-md hover:bg-white/30 text-white text-[13px] font-bold border border-white/20 rounded-xl shadow-sm cursor-pointer h-9 px-4 transition-colors">
+                    <Button asChild size="sm" className="shrink-0 bg-primary/10 hover:bg-primary/20 text-primary text-[13px] font-bold border border-primary/20 rounded-xl shadow-sm cursor-pointer h-9 px-4 transition-colors">
                         <Link href="/app/chat">
                             <Sparkles className="h-4 w-4 mr-1.5" />
                             Book via AI
@@ -169,39 +169,39 @@ export default function AppAppointmentsPage() {
 
             {/* Stats Row */}
             <div className="grid grid-cols-3 gap-3 w-full max-w-full">
-                <div className="bg-white dark:bg-slate-900 rounded-[20px] p-3 text-center shadow-sm border border-slate-200/60 dark:border-slate-800 min-w-0 flex flex-col items-center justify-center h-24 transition-all hover:shadow-md">
-                    <div className="h-8 w-8 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mx-auto mb-1.5">
-                        <CheckCircle2 className="h-4 w-4 text-indigo-500" />
+                <div className="glass-card rounded-[20px] p-3 text-center border border-white/5 min-w-0 flex flex-col items-center justify-center h-24 transition-all">
+                    <div className="h-8 w-8 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center mx-auto mb-1.5">
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
                     </div>
-                    <p className="text-lg font-extrabold text-slate-800 dark:text-slate-100 leading-none">{confirmed.length}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1.5">Confirmed</p>
+                    <p className="text-lg font-extrabold text-foreground leading-none">{confirmed.length}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1.5">Confirmed</p>
                 </div>
-                <div className="bg-white dark:bg-slate-900 rounded-[20px] p-3 text-center shadow-sm border border-slate-200/60 dark:border-slate-800 min-w-0 flex flex-col items-center justify-center h-24 transition-all hover:shadow-md">
-                    <div className="h-8 w-8 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center mx-auto mb-1.5">
-                        <Clock className="h-4 w-4 text-amber-500" />
+                <div className="glass-card rounded-[20px] p-3 text-center border border-white/5 min-w-0 flex flex-col items-center justify-center h-24 transition-all">
+                    <div className="h-8 w-8 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center mx-auto mb-1.5">
+                        <Clock className="h-4 w-4 text-amber-400" />
                     </div>
-                    <p className="text-lg font-extrabold text-slate-800 dark:text-slate-100 leading-none">{pending.length}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1.5">Pending</p>
+                    <p className="text-lg font-extrabold text-foreground leading-none">{pending.length}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1.5">Pending</p>
                 </div>
-                <div className="bg-white dark:bg-slate-900 rounded-[20px] p-3 text-center shadow-sm border border-slate-200/60 dark:border-slate-800 min-w-0 flex flex-col items-center justify-center h-24 transition-all hover:shadow-md">
-                    <div className="h-8 w-8 rounded-xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mx-auto mb-1.5">
-                        <XCircle className="h-4 w-4 text-rose-500" />
+                <div className="glass-card rounded-[20px] p-3 text-center border border-white/5 min-w-0 flex flex-col items-center justify-center h-24 transition-all">
+                    <div className="h-8 w-8 rounded-xl bg-destructive/15 border border-destructive/20 flex items-center justify-center mx-auto mb-1.5">
+                        <XCircle className="h-4 w-4 text-destructive" />
                     </div>
-                    <p className="text-lg font-extrabold text-slate-800 dark:text-slate-100 leading-none">{cancelled.length}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1.5">Cancelled</p>
+                    <p className="text-lg font-extrabold text-foreground leading-none">{cancelled.length}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1.5">Cancelled</p>
                 </div>
             </div>
 
             {/* Tabs / Filter Buttons */}
             <Tabs defaultValue="confirmed" className="w-full flex flex-col">
-                <TabsList className="flex w-full h-[48px] bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-1.5 rounded-[16px] shadow-sm">
-                    <TabsTrigger value="confirmed" className="flex-1 rounded-[12px] text-[13px] font-bold h-full cursor-pointer data-[state=active]:bg-indigo-50 dark:data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 transition-all">
+                <TabsList className="flex w-full h-[48px] glass-panel border border-white/5 p-1.5 rounded-[16px]">
+                    <TabsTrigger value="confirmed" className="flex-1 rounded-[12px] text-[13px] font-bold h-full cursor-pointer data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20 transition-all text-muted-foreground">
                         Confirmed {confirmed.length > 0 && `(${confirmed.length})`}
                     </TabsTrigger>
-                    <TabsTrigger value="pending" className="flex-1 rounded-[12px] text-[13px] font-bold h-full cursor-pointer data-[state=active]:bg-indigo-50 dark:data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 transition-all">
+                    <TabsTrigger value="pending" className="flex-1 rounded-[12px] text-[13px] font-bold h-full cursor-pointer data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20 transition-all text-muted-foreground">
                         Pending {pending.length > 0 && `(${pending.length})`}
                     </TabsTrigger>
-                    <TabsTrigger value="cancelled" className="flex-1 rounded-[12px] text-[13px] font-bold h-full cursor-pointer data-[state=active]:bg-indigo-50 dark:data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 transition-all">
+                    <TabsTrigger value="cancelled" className="flex-1 rounded-[12px] text-[13px] font-bold h-full cursor-pointer data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20 transition-all text-muted-foreground">
                         Cancelled {cancelled.length > 0 && `(${cancelled.length})`}
                     </TabsTrigger>
                 </TabsList>
